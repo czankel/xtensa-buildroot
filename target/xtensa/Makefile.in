@@ -1,1 +1,47 @@
--include target/xtensa/*/*.mk
+##############################################################################
+#
+# Xtensa processor architecture
+#
+##############################################################################
+#
+# The Xtensa processor architecture is configurable and requires to patch
+# all toolchain tools.
+#
+# The patch comes in form of a tar archive with the following structure:
+#
+#   bfd/xtensa-modules.c
+#   gdb/regformats/
+#   gdb/regformats/reg-xtensa.dat
+#   gdb/xtensa-config.c
+#   gdb/gdbserver/
+#   gdb/gdbserver/xtensa-regmap.c
+#   include/xtensa-config.h
+#   ld/emulparams/
+#   ld/emulparams/xtensa-config.sh
+#
+
+XTENSA_CORENAME = $(call qstrip, $(BR2_xtensa_core_name))
+
+# don't patch any toolchain if we are building for the default configuration
+ifeq ($(XTENSA_CORENAME),fsf)
+XTENSA_PATCH_CMD =
+else
+
+# we allow to specify an external directoy for the patch file
+ifeq ($(call qstrip,$(BR2_xtensa_overlay_dir)),)
+	XTENSA_PATCH_FILE=$(TOPDIR)/target/xtensa/overlay/xtensa_$(XTENSA_CORENAME).tar
+else
+	XTENSA_PATCH_FILE=$(call qstrip,$(BR2_xtensa_overlay_dir))/xtensa_$(XTENSA_CORENAME).tar
+endif
+
+# make sure patch file exists
+XTENSA_PATCH_CMD = $(if $(strip($(wildcard $(XTENSA_PATCH_FILE)))), tar xf $(XTENSA_PATCH_FILE) -C $(@D),\
+	$(error Missing patch file $(XTENSA_PATCH_FILE) for Xtensa $(XTENSA_CORENAMENAME) processor))
+
+XTENSA_PATCH_BINUTILS = $(XTENSA_PATCH_CMD) bfd include ld
+XTENSA_PATCH_GCC = $(XTENSA_PATCH_CMD) include
+XTENSA_PATCH_GDB = $(XTENSA_PATCH_CMD) bfd include gdb
+
+HOST_BINUTILS_POST_PATCH_HOOKS += XTENSA_PATCH_BINUTILS
+
+endif
