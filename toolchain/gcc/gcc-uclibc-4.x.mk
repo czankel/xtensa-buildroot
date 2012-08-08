@@ -33,11 +33,6 @@ else
  GCC_SITE:=$(BR2_GNU_MIRROR)/gcc/gcc-$(GCC_VERSION)
 endif
 
-ifneq ($(filter xtensa%,$(ARCH)),)
-include target/xtensa/patch.in
-GCC_PATCH_EXTRA:=$(call XTENSA_PATCH,gcc,$(GCC_PATCH_DIR),. ..)
-endif
-
 GCC_SOURCE:=gcc-$(GCC_VERSION).tar.bz2
 GCC_PATCH_DIR:=toolchain/gcc/$(GCC_VERSION)
 GCC_DIR:=$(TOOLCHAIN_DIR)/gcc-$(GCC_VERSION)
@@ -269,6 +264,9 @@ ifeq ($(ARCH)-$(BR2_GCC_SHARED_LIBGCC),powerpc-y)
 ifneq ($(BR2_SOFT_FLOAT),)
 	support/scripts/apply-patches.sh $(GCC_DIR) toolchain/gcc/$(GCC_VERSION) powerpc-link-with-math-lib.patch.conditional
 endif
+endif
+ifeq ("$(strip $(ARCH))","xtensa")
+	$(call $(XTENSA_PATCH_GCC))
 endif
 	touch $@
 
