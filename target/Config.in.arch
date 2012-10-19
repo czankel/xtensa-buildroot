@@ -138,6 +138,13 @@ config BR2_x86_64
 	  architecture compatible microprocessor).
 	  http://en.wikipedia.org/wiki/X86_64
 
+config BR2_xtensa
+	bool "Xtensa"
+	help
+	  Xtensa is a Tensilica processor IP architecture.
+	  http://en.wikipedia.org/wiki/Xtensa
+	  http://www.tensilica.com/
+
 endchoice
 
 config BR2_microblaze
@@ -626,6 +633,7 @@ config BR2_ARCH
 	default "sh4aeb"	if BR2_sh4aeb
 	default "sh64"		if BR2_sh64
 	default "sparc"		if BR2_sparc
+	default "xtensa"	if BR2_xtensa
 
 
 config BR2_ENDIAN
