@@ -25,6 +25,12 @@ gdb-unpacked: $(GDB_DIR)/.unpacked
 $(GDB_DIR)/.unpacked: $(DL_DIR)/$(GDB_SOURCE)
 	mkdir -p $(GDB_DIR)
 	$(GDB_CAT) $(DL_DIR)/$(GDB_SOURCE) | tar -C $(GDB_DIR) $(TAR_STRIP_COMPONENTS)=1 $(TAR_OPTIONS) -
+ifeq (${ARCH},xtensa)
+ifneq ($(call qstrip, $(BR2_xtensa_core_name)),)
+	tar xf $(BR2_xtensa_overlay_dir)/xtensa_$(call qstrip,\
+		$(BR2_xtensa_core_name)).tar -C $(@D) bfd include gdb
+endif
+endif
 ifneq ($(wildcard $(GDB_PATCH_DIR)),)
 	support/scripts/apply-patches.sh $(GDB_DIR) $(GDB_PATCH_DIR) \*.patch
 endif
