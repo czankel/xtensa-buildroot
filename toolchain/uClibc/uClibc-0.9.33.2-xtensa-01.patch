@@ -1,0 +1,415 @@
+diff --git a/libc/sysdeps/linux/xtensa/bits/atomic.h b/libc/sysdeps/linux/xtensa/bits/atomic.h
+new file mode 100644
+index 0000000..49163a2
+--- /dev/null
++++ b/libc/sysdeps/linux/xtensa/bits/atomic.h
+@@ -0,0 +1,233 @@
++/* Copyright (C) 2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 51 Franklin Street - Fifth Floor,
++   Boston, MA 02110-1301, USA.  */
++
++#ifndef _BITS_ATOMIC_H
++#define _BITS_ATOMIC_H  1
++
++#include <inttypes.h>
++
++typedef int32_t atomic32_t;
++typedef uint32_t uatomic32_t;
++typedef int_fast32_t atomic_fast32_t;
++typedef uint_fast32_t uatomic_fast32_t;
++
++typedef int64_t atomic64_t;
++typedef uint64_t uatomic64_t;
++typedef int_fast64_t atomic_fast64_t;
++typedef uint_fast64_t uatomic_fast64_t;
++
++typedef intptr_t atomicptr_t;
++typedef uintptr_t uatomicptr_t;
++typedef intmax_t atomic_max_t;
++typedef uintmax_t uatomic_max_t;
++
++
++/* Xtensa has only a 32-bit form of a store-conditional instruction.  */
++
++#define __arch_compare_and_exchange_bool_8_acq(mem, newval, oldval) \
++      (abort (), 0)
++
++#define __arch_compare_and_exchange_bool_16_acq(mem, newval, oldval) \
++      (abort (), 0)
++
++#define __arch_compare_and_exchange_bool_8_rel(mem, newval, oldval) \
++      (abort (), 0)
++
++#define __arch_compare_and_exchange_bool_16_rel(mem, newval, oldval) \
++      (abort (), 0)
++
++/* Atomically store NEWVAL in *MEM if *MEM is equal to OLDVAL.
++   Return the old *MEM value.  */
++
++#define __arch_compare_and_exchange_val_32_acq(mem, newval, oldval)  \
++  ({__typeof__(*(mem)) __tmp, __value;                               \
++    __asm__ __volatile__(                                            \
++      "1:     l32i    %1, %2, 0               \n"                    \
++      "       bne     %1, %4, 2f              \n"                    \
++      "       wsr     %1, SCOMPARE1           \n"                    \
++      "       mov     %0, %1                  \n"                    \
++      "       mov     %1, %3                  \n"                    \
++      "       s32c1i  %1, %2, 0               \n"                    \
++      "       bne     %0, %1, 1b              \n"                    \
++      "2:                                     \n"                    \
++      : "=&a" (__value), "=&a" (__tmp)                               \
++      : "a" (mem), "a" (newval), "a" (oldval)                        \
++      : "memory" );                                                  \
++    __tmp;                                                           \
++  })
++
++/* Atomically store NEWVAL in *MEM if *MEM is equal to OLDVAL.
++   Return zero if *MEM was changed or non-zero if no exchange happened.  */
++
++#define __arch_compare_and_exchange_bool_32_acq(mem, newval, oldval) \
++  ({__typeof__(*(mem)) __tmp, __value;                               \
++    __asm__ __volatile__(                                            \
++      "1:     l32i    %0, %2, 0               \n"                    \
++      "       sub     %1, %4, %0              \n"                    \
++      "       bnez    %1, 2f                  \n"                    \
++      "       wsr     %0, SCOMPARE1           \n"                    \
++      "       mov     %1, %3                  \n"                    \
++      "       s32c1i  %1, %2, 0               \n"                    \
++      "       bne     %0, %1, 1b              \n"                    \
++      "       movi    %1, 0                   \n"                    \
++      "2:                                     \n"                    \
++      : "=&a" (__value), "=&a" (__tmp)                               \
++      : "a" (mem), "a" (newval), "a" (oldval)                        \
++      : "memory" );                                                  \
++    __tmp != 0;                                                      \
++  })
++
++/* Store NEWVALUE in *MEM and return the old value.  */
++
++#define __arch_exchange_32_acq(mem, newval)                          \
++  ({__typeof__(*(mem)) __tmp, __value;                               \
++    __asm__ __volatile__(                                            \
++      "1:     l32i    %0, %2, 0               \n"                    \
++      "       wsr     %0, SCOMPARE1           \n"                    \
++      "       mov     %1, %3                  \n"                    \
++      "       s32c1i  %1, %2, 0               \n"                    \
++      "       bne     %0, %1, 1b              \n"                    \
++      : "=&a" (__value), "=&a" (__tmp)                               \
++      : "a" (mem), "a" (newval)                                      \
++      : "memory" );                                                  \
++    __tmp;                                                           \
++  })
++
++/* Add VALUE to *MEM and return the old value of *MEM.  */
++
++#define __arch_atomic_exchange_and_add_32(mem, value)                \
++  ({__typeof__(*(mem)) __tmp, __value;                               \
++    __asm__ __volatile__(                                            \
++      "1:     l32i    %0, %2, 0               \n"                    \
++      "       wsr     %0, SCOMPARE1           \n"                    \
++      "       add     %1, %0, %3              \n"                    \
++      "       s32c1i  %1, %2, 0               \n"                    \
++      "       bne     %0, %1, 1b              \n"                    \
++      : "=&a" (__value), "=&a" (__tmp)                               \
++      : "a" (mem), "a" (value)                                       \
++      : "memory" );                                                  \
++    __tmp;                                                           \
++  })
++
++/* Subtract VALUE from *MEM and return the old value of *MEM.  */
++
++#define __arch_atomic_exchange_and_sub_32(mem, value)                \
++  ({__typeof__(*(mem)) __tmp, __value;                               \
++    __asm__ __volatile__(                                            \
++      "1:     l32i    %0, %2, 0               \n"                    \
++      "       wsr     %0, SCOMPARE1           \n"                    \
++      "       sub     %1, %0, %3              \n"                    \
++      "       s32c1i  %1, %2, 0               \n"                    \
++      "       bne     %0, %1, 1b              \n"                    \
++      : "=&a" (__value), "=&a" (__tmp)                               \
++      : "a" (mem), "a" (value)                                       \
++      : "memory" );                                                  \
++    __tmp;                                                           \
++  })
++
++/* Decrement *MEM if it is > 0, and return the old value.  */
++
++#define __arch_atomic_decrement_if_positive_32(mem)                  \
++  ({__typeof__(*(mem)) __tmp, __value;                               \
++    __asm__ __volatile__(                                            \
++      "1:     l32i    %0, %2, 0               \n"                    \
++      "       blti    %0, 1, 2f               \n"                    \
++      "       wsr     %0, SCOMPARE1           \n"                    \
++      "       addi    %1, %0, -1              \n"                    \
++      "       s32c1i  %1, %2, 0               \n"                    \
++      "       bne     %0, %1, 1b              \n"                    \
++      "2:                                     \n"                    \
++      : "=&a" (__value), "=&a" (__tmp)                               \
++      : "a" (mem)                                                    \
++      : "memory" );                                                  \
++    __tmp;                                                           \
++  })
++
++
++/* These are the preferred public interfaces: */
++
++#define atomic_compare_and_exchange_val_acq(mem, newval, oldval)     \
++  ({                                                                 \
++    if (sizeof (*mem) != 4)                                          \
++      abort();                                                       \
++    __arch_compare_and_exchange_val_32_acq(mem, newval, oldval);     \
++  })
++
++#define atomic_exchange_acq(mem, newval)                             \
++  ({                                                                 \
++    if (sizeof(*(mem)) != 4)                                         \
++      abort();                                                       \
++    __arch_exchange_32_acq(mem, newval);                             \
++  })
++
++#define atomic_exchange_and_add(mem, newval)                         \
++  ({                                                                 \
++    if (sizeof(*(mem)) != 4)                                         \
++      abort();                                                       \
++    __arch_atomic_exchange_and_add_32(mem, newval);                  \
++  })
++
++#define atomic_exchange_and_sub(mem, newval)                         \
++  ({                                                                 \
++    if (sizeof(*(mem)) != 4)                                         \
++      abort();                                                       \
++    __arch_atomic_exchange_and_sub_32(mem, newval);                  \
++  })
++
++#define atomic_decrement_if_positive(mem)                            \
++  ({                                                                 \
++    if (sizeof(*(mem)) != 4)                                         \
++      abort();                                                       \
++    __arch_atomic_decrement_if_positive_32(mem);                     \
++  })
++
++
++# define __arch_compare_and_exchange_bool_64_acq(mem, newval, oldval) \
++    (abort (), 0)
++
++# define __arch_compare_and_exchange_val_64_acq(mem, newval, oldval) \
++    (abort (), (__typeof (*mem)) 0)
++
++# define __arch_compare_and_exchange_bool_64_rel(mem, newval, oldval) \
++    (abort (), 0)
++
++# define __arch_compare_and_exchange_val_64_rel(mem, newval, oldval) \
++    (abort (), (__typeof (*mem)) 0)
++
++# define __arch_atomic_exchange_64_acq(mem, value) \
++    ({ abort (); (*mem) = (value); })
++
++# define __arch_atomic_exchange_64_rel(mem, value) \
++    ({ abort (); (*mem) = (value); })
++
++# define __arch_atomic_exchange_and_add_64(mem, value) \
++    ({ abort (); (*mem) = (value); })
++
++# define __arch_atomic_increment_val_64(mem) \
++    ({ abort (); (*mem)++; })
++
++# define __arch_atomic_decrement_val_64(mem) \
++    ({ abort (); (*mem)--; })
++
++# define __arch_atomic_decrement_if_positive_64(mem) \
++    ({ abort (); (*mem)--; })
++
++
++
++#endif /* _BITS_ATOMIC_H */
++
+diff --git a/libc/sysdeps/linux/xtensa/bits/sigcontext.h b/libc/sysdeps/linux/xtensa/bits/sigcontext.h
+new file mode 100644
+index 0000000..acfaa85
+--- /dev/null
++++ b/libc/sysdeps/linux/xtensa/bits/sigcontext.h
+@@ -0,0 +1,41 @@
++/* Copyright (C) 2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, write to the Free
++   Software Foundation, Inc., 51 Franklin Street - Fifth Floor,
++   Boston, MA 02110-1301, USA.  */
++
++#if !defined _SIGNAL_H && !defined _SYS_UCONTEXT_H
++# error "Never use <bits/sigcontext.h> directly; include <signal.h> instead."
++#endif
++
++#ifndef _BITS_SIGCONTEXT_H
++#define _BITS_SIGCONTEXT_H 1
++
++struct sigcontext
++{
++  unsigned long sc_pc;
++  unsigned long sc_ps;
++  unsigned long sc_lbeg;
++  unsigned long sc_lend;
++  unsigned long sc_lcount;
++  unsigned long sc_sar;
++  unsigned long sc_acclo;
++  unsigned long sc_acchi;
++  void *sc_xtregs;
++  unsigned long sc_a[16];
++};
++
++#endif /* _BITS_SIGCONTEXT_H */
++
+diff --git a/libc/sysdeps/linux/xtensa/setjmp.S b/libc/sysdeps/linux/xtensa/setjmp.S
+index cd74caf..0cbee0b 100644
+--- a/libc/sysdeps/linux/xtensa/setjmp.S
++++ b/libc/sysdeps/linux/xtensa/setjmp.S
+@@ -86,7 +86,7 @@ ENTRY (__sigsetjmp)
+ 	/* Copy 0-8 words from the register overflow area.  */
+ 	extui	a3, a0, 30, 2
+ 	blti	a3, 2, .Lendsj
+-	l32i	a7, a1, 4
++	l32i	a7, a5, 4
+ 	slli	a4, a3, 4
+ 	sub	a5, a7, a4
+ 	addi	a6, a2, 16
+diff --git a/libc/sysdeps/linux/xtensa/sys/user.h b/libc/sysdeps/linux/xtensa/sys/user.h
+new file mode 100644
+index 0000000..f97f93e
+--- /dev/null
++++ b/libc/sysdeps/linux/xtensa/sys/user.h
+@@ -0,0 +1,20 @@
++/*
++ * include/asm-xtensa/user.h
++ *
++ * Xtensa Processor version.
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ *
++ * Copyright (C) 2001 - 2005 Tensilica Inc.
++ */
++
++#ifndef _XTENSA_USER_H
++#define _XTENSA_USER_H
++
++/* This file usually defines a 'struct user' structure. However, it it only
++ * used for a.out file, which are not supported on Xtensa.
++ */
++
++#endif  /* _XTENSA_USER_H */
+diff --git a/libc/sysdeps/linux/xtensa/sysdep.h b/libc/sysdeps/linux/xtensa/sysdep.h
+index fb691f8..176e88f 100644
+--- a/libc/sysdeps/linux/xtensa/sysdep.h
++++ b/libc/sysdeps/linux/xtensa/sysdep.h
+@@ -17,6 +17,8 @@
+    Software Foundation, Inc., 51 Franklin Street - Fifth Floor,
+    Boston, MA 02110-1301, USA.  */
+ 
++#include <sys/syscall.h>
++
+ #ifdef __ASSEMBLER__
+ 
+ #define ALIGNARG(log2) 1 << log2
+diff --git a/libpthread/linuxthreads.old/sysdeps/xtensa/pt-machine.h b/libpthread/linuxthreads.old/sysdeps/xtensa/pt-machine.h
+index acd4d10..2ae2275 100644
+--- a/libpthread/linuxthreads.old/sysdeps/xtensa/pt-machine.h
++++ b/libpthread/linuxthreads.old/sysdeps/xtensa/pt-machine.h
+@@ -26,19 +26,51 @@
+ #include <asm/unistd.h>
+ 
+ #ifndef PT_EI
+-# define PT_EI __extern_always_inline
++# define PT_EI extern inline __attribute__ ((gnu_inline))
+ #endif
+ 
+-/* Memory barrier.  */
+ #define MEMORY_BARRIER() __asm__ ("memw" : : : "memory")
++#define HAS_COMPARE_AND_SWAP
++
++extern long int testandset (int *spinlock);
++extern int __compare_and_swap (long int *p, long int oldval, long int newval);
+ 
+ /* Spinlock implementation; required.  */
+ PT_EI long int
+ testandset (int *spinlock)
+ {
+-  int unused = 0;
+-  return INTERNAL_SYSCALL (xtensa, , 4, SYS_XTENSA_ATOMIC_SET,
+-			   spinlock, 1, unused);
++	unsigned long tmp;
++	__asm__ volatile (
++"	movi	%0, 0			\n"
++"	wsr	%0, SCOMPARE1		\n"
++"	movi	%0, 1			\n"
++"	s32c1i	%0, %1, 0		\n"
++	: "=&a" (tmp)
++	: "a" (spinlock)
++	: "memory"
++	);
++	return tmp;
++}
++
++PT_EI int
++__compare_and_swap (long int *p, long int oldval, long int newval)
++{
++        unsigned long tmp;
++        unsigned long value;
++        __asm__ volatile (
++"1:     l32i    %0, %2, 0            \n"
++"       bne     %0, %4, 2f           \n"
++"       wsr     %0, SCOMPARE1        \n"
++"       mov     %1, %0               \n"
++"       mov     %0, %3               \n"
++"       s32c1i  %0, %2, 0            \n"
++"       bne     %1, %0, 1b           \n"
++"2:                                  \n"
++          : "=&a" (tmp), "=&a" (value)
++          : "a" (p), "a" (newval), "a" (oldval)
++          : "memory" );
++
++        return tmp == oldval;
+ }
+ 
+ /* Get some notion of the current stack.  Need not be exactly the top
+diff --git a/utils/ldd.c b/utils/ldd.c
+index 2812d2a..e53f360 100644
+--- a/utils/ldd.c
++++ b/utils/ldd.c
+@@ -106,6 +106,11 @@
+ #define ELFCLASSM	ELFCLASS32
+ #endif
+ 
++#if defined(__xtensa__)
++#define MATCH_MACHINE(x) (x == EM_XTENSA)
++#define ELFCLASSM	ELFCLASS32
++#endif
++
+ #ifndef MATCH_MACHINE
+ # ifdef __linux__
+ #  include <asm/elf.h>
