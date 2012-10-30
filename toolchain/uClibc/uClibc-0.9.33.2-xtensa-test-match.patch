@@ -1,0 +1,8 @@
+--- /dev/null	2012-10-25 13:27:39.232672969 -0700
++++ uClibc-0.9.33.2/test/math/libm-test-ulps-xtensa	2012-10-25 18:36:52.773614625 -0700
+@@ -0,0 +1,5 @@
++# File with deltas for math/libm-test
++# This file is the fallback and contains
++# no data
++# You can create a new file with e.g. `test-double -u'
++# followed by `gen-libm-test.pl -u ULPs -n'.
