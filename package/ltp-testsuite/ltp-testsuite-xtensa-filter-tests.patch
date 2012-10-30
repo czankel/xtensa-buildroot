@@ -1,0 +1,18 @@
+--- ltp-testsuite-undefined/testcases/misc/math/Makefile.orig	2012-10-26 13:44:10.228199016 -0700
++++ ltp-testsuite-undefined/testcases/misc/math/Makefile	2012-10-26 13:54:15.244174254 -0700
+@@ -24,4 +24,6 @@
+ 
+ include $(top_srcdir)/include/mk/env_pre.mk
+ 
++FILTER_OUT_DIRS += float
++
+ include $(top_srcdir)/include/mk/generic_trunk_target.mk
+--- ltp-testsuite-undefined/testcases/kernel/syscalls/Makefile.orig	2012-10-26 13:39:11.228211249 -0700
++++ ltp-testsuite-undefined/testcases/kernel/syscalls/Makefile	2012-10-26 13:39:52.572209560 -0700
+@@ -28,5 +28,6 @@
+ FILTER_OUT_DIRS	+= capget capset chmod chown clone fork getcontext llseek \
+ 		   nftw profil remap_file_pages
+ endif
++FILTER_OUT_DIRS += clock_nanosleep ustat
+ 
+ include $(top_srcdir)/include/mk/generic_trunk_target.mk
