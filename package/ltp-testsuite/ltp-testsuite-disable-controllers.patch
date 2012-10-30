@@ -1,0 +1,10 @@
+--- ltp-testsuite-undefined/testcases/kernel/Makefile.orig	2012-10-26 13:42:16.252203680 -0700
++++ ltp-testsuite-undefined/testcases/kernel/Makefile	2012-10-26 13:42:17.960203610 -0700
+@@ -37,7 +37,6 @@
+ # KEEP THIS LIST ALPHABETIZED PLEASE!
+ SUBDIRS			+= connectors \
+ 			   containers \
+-			   controllers \
+ 			   fs \
+ 			   hotplug \
+ 			   io \
