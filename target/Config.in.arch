@@ -595,7 +595,7 @@ config BR2_xtensa_fsf
 endchoice
 
 config BR2_xtensa_custom_name
-	string "Custom Xtensa processor configuration anme"
+	string "Custom Xtensa processor configuration name"
 	depends on BR2_xtensa_custom
 	default ""
 	help
