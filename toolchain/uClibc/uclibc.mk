@@ -525,9 +525,9 @@ uclibc-target-utils: $(TARGET_DIR)/usr/bin/ldd
 uclibc-target-utils-source: $(DL_DIR)/$(UCLIBC_SOURCE)
 
 $(UCLIBC_DIR)/test/unistd/errno:
-	$(MAKE) -C $(UCLIBC_DIR)/test \
+	$(MAKE) -C $(UCLIBC_DIR) \
 	ARCH_CFLAGS=-I$(STAGING_DIR)/usr/include \
-	UCLIBC_ONLY=1 TEST_INSTALLED_UCLIBC=1 compile
+	UCLIBC_ONLY=1 TEST_INSTALLED_UCLIBC=1 test_compile
 
 $(TARGET_DIR)/root/uClibc/test/unistd/errno: $(UCLIBC_DIR)/test/unistd/errno
 	mkdir -p $(TARGET_DIR)/root/uClibc
